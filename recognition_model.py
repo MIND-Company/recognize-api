@@ -4,15 +4,14 @@ import pandas as pd
 import torch
 import cv2
 
+from lpr_net import build_lprnet, rec_plate, CHARS
+
 import os
 
-import pytesseract
-
-pytesseract.pytesseract.tesseract_cmd = r'D:\Python\tesseract\tesseract.exe' # Изменить путь на свой
 
 def recognize_plate(img):
     try:
-        best_weights = './yolo/main_best_964_51.pt'
+        best_weights = './yolo/best_964_521.pt'
         model = torch.hub.load('ultralytics/yolov5', 'custom', best_weights)
 
         im = cv2.imread(img)
@@ -27,11 +26,14 @@ def recognize_plate(img):
         y_max = int(results_df['ymax'])
         # Cropping license plate from image ""
         number_plate = carplate_img_rgb[y_min:y_max, x_min:x_max]
-        number_plate = cv2.resize(number_plate, (int(3 * number_plate.shape[1]), int(3 * number_plate.shape[0])))
 
-        text = pytesseract.image_to_string(number_plate,
-                                           config=f'--psm 13 --oem 1 '
-                                                  f'-c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+        LPRnet = build_lprnet(lpr_max_len=9, phase=False, class_num=len(CHARS), dropout_rate=0)
+        LPRnet.to(device)
+        LPRnet.load_state_dict(torch.load('Final_LPRNet_model.pth', map_location=device))
+
+        text = rec_plate(LPRnet, number_plate, device)
 
         return text
     except:

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File
 from recognition_model import recognize_plate
-import uvicorn
 import cv2
+import uvicorn
 
 app = FastAPI()
 
@@ -12,5 +12,5 @@ def register_entry(img: UploadFile = File(...)):
     return {"plate": recognize_plate(img.file)}
 
 
-if __name__ == "__main__":
-    uvicorn.run("main:app", port=8000, log_level="info", reload=True)
+if __name__ == '__main__':
+    uvicorn.run('main:app', port=8000, log_level='info', reload=True)
